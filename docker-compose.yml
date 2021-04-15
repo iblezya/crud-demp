@@ -1,0 +1,54 @@
+version: "3.7"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: PHP.Dockerfile
+    container_name: web_app
+    working_dir: /app
+    volumes:
+      - ./app:/app
+    depends_on:
+      - db
+    networks:
+      - web_app_network
+
+  webserver:
+    image: nginx:stable-alpine
+    container_name: web_server
+    working_dir: /app
+    ports:
+      - 8100:80
+      - 8143:443
+    volumes:
+      - ./app:/app
+      - ./conf.d/:/etc/nginx/conf.d/
+    depends_on:
+      - app
+      - db
+    links:
+      - app
+    networks:
+      - web_app_network
+
+  db:
+    image: mariadb:10.5-focal
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: uhet
+    volumes:
+      - mariadbwebphp:/var/lib/mysql
+    networks: 
+        - web_app_network
+
+volumes:
+  mariadbwebphp:
+    driver: local
+
+networks: 
+  web_app_network:
+    driver: bridge
